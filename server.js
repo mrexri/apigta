@@ -12,7 +12,7 @@ app.get('/api/servers/single/:serverId', async (req, res) => {
     const serverId = req.params.serverId;
 
     try {
-        const response = await fetch(`https://servers.fivem.net/api/servers/single/${serverId}`);
+        const response = await fetch(`https://servers.fivem.net/api/servers/single/vz9bar`);
         if (!response.ok) throw new Error('Server not found');
 
         const data = await response.json();
