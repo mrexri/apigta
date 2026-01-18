@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-import FiveM from "fivem-stats";
+import axios from "axios"; // Needed for HTTPS requests
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -8,35 +8,32 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Query server status using ip & port query parameters
+// Query server status using server ID
 app.get("/api/server", async (req, res) => {
-  const { ip, port } = req.query;
+  const { serverId } = req.query;
 
-  if (!ip || !port) {
-    return res
-      .status(400)
-      .json({ error: "Missing required query params: ip & port" });
+  if (!serverId) {
+    return res.status(400).json({ error: "Missing required query param: serverId" });
   }
 
   try {
-    // Create `fivem-stats` object
-    const server = new FiveM.Stats(`${ip}:${port}`);
+    const response = await axios.get(
+      `https://servers-frontend.fivem.net/api/servers/single/vz9bar`
+    );
 
-    // Fetch server info
-    const serverStatus = await server.getServerStatus();
-    const players = await server.getPlayers();
-    const allPlayers = await server.getPlayersAll();
-    const resources = await server.getResources();
+    const serverData = response.data;
 
+    // You can format the data to match your old API structure if needed
     res.json({
-      status: serverStatus,
-      players,
-      allPlayers,
-      resources,
+      info: serverData.Data?.vars || {},  // Server variables
+      players: serverData.Data?.clients || 0,
+      maxPlayers: serverData.Data?.sv_maxclients || 0,
+      resources: serverData.Data?.resources || [],
+      raw: serverData, // full raw response if needed
     });
   } catch (err) {
-    console.error("Error querying FiveM server:", err);
-    res.status(500).json({ error: "Could not query server", details: err });
+    console.error("Error fetching server data:", err.message);
+    res.status(500).json({ error: "Could not fetch server data", details: err.message });
   }
 });
 
